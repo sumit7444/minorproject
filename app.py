@@ -7,13 +7,12 @@ from dotenv import load_dotenv
 import time
 import random
 from geopy.geocoders import Nominatim
+import json
+import traceback
 
-# Load .env variables
 load_dotenv()
 BEARER_TOKEN = os.getenv("BEARER_TOKEN")
-print("✅ Token Loaded:", bool(BEARER_TOKEN))  # Debug 1 — True means token mil gaya
 
-# Flask app setup
 app = Flask(
     __name__,
     static_folder=os.path.join(os.path.dirname(__file__), 'static'),
@@ -21,19 +20,16 @@ app = Flask(
 )
 CORS(app)
 
-# Geopy setup
 geolocator = Nominatim(user_agent="disaster_app")
 
-# Random Lat/Lon generator
 def random_latlon(region="any"):
     if region.lower() == "india":
         return round(random.uniform(8, 28), 4), round(random.uniform(68, 97), 4)
     elif region.lower() == "usa":
         return round(random.uniform(25, 49), 4), round(random.uniform(-125, -67), 4)
-    else:  # any/global
+    else:
         return round(random.uniform(-30, 55), 4), round(random.uniform(-130, 150), 4)
 
-# Location finder
 def get_lat_lon(place_name):
     try:
         if place_name:
@@ -44,11 +40,9 @@ def get_lat_lon(place_name):
         pass
     return None, None
 
-# Severity calculation based on keywords
 def calculate_severity(text):
     high_keywords = ["disaster", "emergency", "massive", "flood", "earthquake", "cyclone", "tsunami", "landslide"]
     medium_keywords = ["alert", "warning", "storm", "heavy rain", "fire", "evacuate"]
-
     text_lower = text.lower()
     if any(word in text_lower for word in high_keywords):
         return round(random.uniform(3.0, 4.0), 2)
@@ -68,61 +62,34 @@ def analyze():
     keyword = data.get('keyword', '#flood')
     region = data.get('region', 'any')
     real = data.get('real', False)
-
     try:
         if real:
-            if not BEARER_TOKEN:
-                return jsonify({"error": "Bearer token not found in .env"}), 500
+            print("📥 Reading live tweets from tweets.json...")
+            live_posts = []
+            try:
+                with open("tweets.json", "r") as f:
+                    for line in f:
+                        if line.strip():
+                            tweet_data = json.loads(line)
+                            live_posts.append({
+                                "text": tweet_data.get("text", ""),
+                                "lat": None,
+                                "lon": None,
+                                "timestamp": int(time.time() * 1000),
+                            })
+                posts = live_posts
+                print(f"📊 Found {len(posts)} tweets to analyze.")
+            except FileNotFoundError:
+                print("⚠️ tweets.json not found. Run stream_listener.py to collect data.")
+                return jsonify({'posts': [], 'score': 0, 'error': 'No live data found.'}), 200
+            except json.JSONDecodeError:
+                print("Error decoding JSON from tweets.json.")
+                return jsonify({'error': 'Error reading live data file.'}), 500
 
-            print("📥 Keyword Used:", keyword)  # Debug 2
-
-            client = tweepy.Client(bearer_token=BEARER_TOKEN, wait_on_rate_limit=True)
-            query = f"{keyword} -is:retweet lang:en"
-            tweets = client.search_recent_tweets(
-                query=query,
-                max_results=10,
-                tweet_fields=["geo"],
-                expansions=["geo.place_id", "author_id"],
-                user_fields=["location"],
-                place_fields=["full_name"]
-            )
-
-            tweet_count = len(tweets.data) if tweets.data else 0
-            print("📊 Tweets Count:", tweet_count)  # Debug 3
-
-            if tweet_count > 0:
-                print("📝 First Tweet Text:", tweets.data[0].text)  # Debug 4
-
-            posts = []
-            if tweets.data:
-                places = {p["id"]: p for p in tweets.includes.get("places", [])} if hasattr(tweets, "includes") else {}
-                users = {u["id"]: u for u in tweets.includes.get("users", [])} if hasattr(tweets, "includes") else {}
-
-                for t in tweets.data:
-                    lat, lon = None, None
-
-                    if hasattr(t, 'geo') and t.geo:
-                        place_id = t.geo.get('place_id')
-                        if place_id and place_id in places:
-                            lat, lon = get_lat_lon(places[place_id].full_name)
-                    elif hasattr(t, 'place') and t.place:
-                        lat, lon = get_lat_lon(t.place.full_name)
-                    elif t.author_id in users and users[t.author_id].location:
-                        lat, lon = get_lat_lon(users[t.author_id].location)
-
-                    if not lat or not lon:
-                        lat, lon = random_latlon(region)
-
-                    posts.append({
-                        "text": t.text,
-                        "lat": lat,
-                        "lon": lon,
-                        "timestamp": int(time.time() * 1000),
-                        "severity": calculate_severity(t.text)
-                    })
-
+        for p in posts:
+            if not p.get('lat') or not p.get('lon'):
+                p['lat'], p['lon'] = random_latlon(region)
         result = analyze_posts(posts)
-
         out = {
             'posts': result['posts'],
             'score': result['score'],
@@ -133,9 +100,9 @@ def analyze():
             'times': result['times']
         }
         return jsonify(out), 200
-
     except Exception as e:
-        print("❌ Backend Error:", str(e))
+        print(f"❌ Backend Error: {e}")
+        traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
 if __name__ == "__main__":
