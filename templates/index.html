@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>AI Disaster Prediction — Dashboard (Black Theme)</title>
+
+  <link rel="stylesheet" href="../static/style.css">
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="brand">
+        <div class="logo">AI</div>
+        <div>
+          <h1>AI Disaster Prediction — Social Signals</h1>
+          <div class="sub">Project demo • SDG - Climate Action</div>
+        </div>
+      </div>
+
+      <div class="controls-top">
+        <input id="keyword" type="text" value="#flood" />
+        <select id="region">
+          <option value="any">Any / Global</option>
+          <option value="india">India</option>
+          <option value="usa">USA</option>
+        </select>
+        <button id="simulateBtn" class="primary">Simulate & Analyze</button>
+        <button id="clearBtn" class="ghost">Clear</button>
+      </div>
+    </header>
+
+    <div class="grid">
+      <!-- LEFT -->
+      <aside class="card left">
+        <h3>Input & Controls</h3>
+        <label>Keyword or hashtag</label>
+        <input id="leftKeyword" type="text" value="#flood" />
+        <label style="margin-top:10px">Region</label>
+        <select id="leftRegion">
+          <option value="any">Any / Global</option>
+          <option value="india">India</option>
+          <option value="usa">USA</option>
+        </select>
+
+        <div style="margin-top:14px">
+          <strong>Quick steps</strong>
+          <ol class="steps">
+            <li>Click <em>Simulate & Analyze</em> to auto-generate demo posts.</li>
+            <li>Watch map, trend and sentiment animate in real-time.</li>
+            <li>Later connect /api/analyze for real predictions.</li>
+          </ol>
+        </div>
+      </aside>
+
+      <!-- CENTER -->
+      <section class="card center">
+        <div class="top-overview">
+          <div class="ring" id="ringWrap">
+            <svg viewBox="0 0 36 36">
+              <defs>
+                <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#00d4ff"/>
+                  <stop offset="100%" stop-color="#ff6b6b"/>
+                </linearGradient>
+              </defs>
+              <circle cx="18" cy="18" r="15.9" class="ring-bg" />
+              <circle cx="18" cy="18" r="15.9" class="ring-fg" id="indicator"/>
+            </svg>
+            <div class="ring-label">
+              <div id="alertValue">0%</div>
+              <div class="muted">Risk Score</div>
+            </div>
+          </div>
+
+          <div class="realtime">
+            <h3>Real-time overview</h3>
+            <div class="metrics">
+              <div class="metric"><div class="muted">Negative</div><div id="negCount" class="num">0</div></div>
+              <div class="metric"><div class="muted">Neutral</div><div id="neuCount" class="num">0</div></div>
+              <div class="metric"><div class="muted">Positive</div><div id="posCount" class="num">0</div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="charts">
+          <div class="chart-card">
+            <h4>Trend — Alert score over time</h4>
+            <canvas id="trendChart"></canvas>
+          </div>
+          <div class="chart-card">
+            <h4>Sentiment distribution</h4>
+            <canvas id="sentChart"></canvas>
+          </div>
+        </div>
+
+        <div id="feed" class="feed"></div>
+
+        <div class="actions-bottom">
+          <button id="exportBtn" class="primary">Export JSON</button>
+          <button id="tipsBtn" class="ghost">Get training tips</button>
+        </div>
+      </section>
+
+      <!-- RIGHT -->
+      <aside class="card right">
+        <h3>Map & Geo signals</h3>
+        <div id="map"></div>
+        <div class="legend">
+          <span class="pill">Markers = posts</span>
+          <span class="muted" style="margin-left:auto">Marker color = severity</span>
+        </div>
+        <div class="how" style="margin-top:12px">
+          <strong>How it works (brief)</strong>
+          <div class="muted">Collect → Preprocess → Analyze (keyword+model) → Aggregate → Visualize</div>
+        </div>
+      </aside>
+    </div>
+
+    <footer class="foot">devloped by sumit</footer>
+  </div>
+
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.3.0/dist/chart.umd.min.js"></script>
+  <script src="../static/script.js"></script>
+</body>
+</html>

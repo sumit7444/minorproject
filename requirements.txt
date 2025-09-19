@@ -1,0 +1,5 @@
+tweepy
+flask
+flask-cors
+numpy
+pandas
