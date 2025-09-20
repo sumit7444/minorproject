@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 BEARER_TOKEN = os.getenv("BEARER_TOKEN")
+print(f"--- DEBUG: Script is using token: {BEARER_TOKEN} ---")
 OUTPUT_FILE = "tweets.json"
 
 class TweetStreamer(tweepy.StreamingClient):
